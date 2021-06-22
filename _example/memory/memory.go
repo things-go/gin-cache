@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	mcache "github.com/patrickmn/go-cache"
 
 	cache "github.com/things-go/gin-cache"
 	"github.com/things-go/gin-cache/persist/memory"
@@ -14,7 +15,7 @@ func main() {
 
 	app.GET("/hello",
 		cache.CacheWithRequestURI(
-			memory.NewMemoryStore(1*time.Minute),
+			memory.NewStore(mcache.New(time.Minute, time.Minute*10)),
 			5*time.Second,
 			func(c *gin.Context) {
 				c.String(200, "hello world")

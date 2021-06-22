@@ -15,8 +15,8 @@ type Store struct {
 	Redisc *redis.Client
 }
 
-// NewRedisStore new redis store
-func NewRedisStore(client *redis.Client) *Store {
+// NewStore new redis store
+func NewStore(client *redis.Client) *Store {
 	return &Store{client}
 }
 

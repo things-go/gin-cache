@@ -14,11 +14,9 @@ type Store struct {
 	Cache *cache.Cache
 }
 
-// NewMemoryStore new memory store
-func NewMemoryStore(defaultExpiration time.Duration) *Store {
-	return &Store{
-		Cache: cache.New(defaultExpiration, time.Minute),
-	}
+// NewStore new memory store
+func NewStore(c *cache.Cache) *Store {
+	return &Store{c}
 }
 
 // Set implement persist.Store interface

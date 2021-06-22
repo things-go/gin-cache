@@ -13,7 +13,7 @@ import (
 func main() {
 	app := gin.New()
 
-	store := redisStore.NewRedisStore(redis.NewClient(&redis.Options{
+	store := redisStore.NewStore(redis.NewClient(&redis.Options{
 		Network: "tcp",
 		Addr:    "127.0.0.1:6379",
 	}))
