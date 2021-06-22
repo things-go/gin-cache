@@ -9,22 +9,26 @@ import (
 	"github.com/things-go/gin-cache/persist"
 )
 
-type MemoryStore struct {
+// Store memory store
+type Store struct {
 	Cache *cache.Cache
 }
 
-func NewMemoryStore(defaultExpiration time.Duration) *MemoryStore {
-	return &MemoryStore{
+// NewMemoryStore new memory store
+func NewMemoryStore(defaultExpiration time.Duration) *Store {
+	return &Store{
 		Cache: cache.New(defaultExpiration, time.Minute),
 	}
 }
 
-func (c *MemoryStore) Set(key string, value interface{}, expire time.Duration) error {
+// Set implement persist.Store interface
+func (c *Store) Set(key string, value interface{}, expire time.Duration) error {
 	c.Cache.Set(key, value, expire)
 	return nil
 }
 
-func (c *MemoryStore) Get(key string, value interface{}) error {
+// Get implement persist.Store interface
+func (c *Store) Get(key string, value interface{}) error {
 	val, found := c.Cache.Get(key)
 	if !found {
 		return persist.ErrCacheMiss
@@ -37,7 +41,8 @@ func (c *MemoryStore) Get(key string, value interface{}) error {
 	return nil
 }
 
-func (c *MemoryStore) Delete(key string) error {
+// Delete implement persist.Store interface
+func (c *Store) Delete(key string) error {
 	c.Cache.Delete(key)
 	return nil
 }

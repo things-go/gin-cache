@@ -14,6 +14,7 @@ import (
 	"github.com/things-go/gin-cache/persist"
 )
 
+// PageCachePrefix default page cache key prefix
 var PageCachePrefix = "gincache.page.cache"
 
 // Logger logger interface
@@ -27,7 +28,7 @@ type Pool interface {
 	Put(*BodyCache)
 }
 
-// con
+// Config config for cache
 type Config struct {
 	// store the cache backend to store response
 	store persist.Store
@@ -37,12 +38,8 @@ type Config struct {
 	generateKey func(c *gin.Context) (string, bool)
 	// group single flight group
 	group *singleflight.Group
-
-	// SingleflightForgetTime this option only be effective when DisableSingleFlight is false
-	SingleflightForgetTime time.Duration
-
+	// BodyCache pool
 	pool Pool
-
 	// logger debug
 	logger Logger
 }
@@ -90,13 +87,12 @@ func WithLogger(l Logger) Option {
 // default caching response with uri, which use PageCachePrefix
 func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, opts ...Option) gin.HandlerFunc {
 	cfg := Config{
-		store:                  store,
-		expire:                 expire,
-		generateKey:            GenerateRequestURIKey,
-		group:                  new(singleflight.Group),
-		SingleflightForgetTime: 0,
-		pool:                   NewPool(),
-		logger:                 NewDiscard(),
+		store:       store,
+		expire:      expire,
+		generateKey: GenerateRequestURIKey,
+		group:       new(singleflight.Group),
+		pool:        NewPool(),
+		logger:      NewDiscard(),
 	}
 	for _, opt := range opts {
 		opt(&cfg)
@@ -120,12 +116,6 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 
 			// use single flight to avoid Hotspot Invalid
 			bc, _, shared := cfg.group.Do(key, func() (interface{}, error) {
-				// if cfg.SingleflightForgetTime > 0 {
-				// 	go func() {
-				// 		time.Sleep(cfg.SingleflightForgetTime)
-				// 		cfg.group.Forget(key)
-				// 	}()
-				// }
 				handle(c)
 
 				bc := getBodyCacheFromBodyWriter(bodyWriter)
@@ -155,21 +145,25 @@ func CacheWithRequestPath(store persist.Store, expire time.Duration, handle gin.
 	return Cache(store, expire, handle, append(opts, WithGenerateKey(GenerateRequestPathKey))...)
 }
 
-func GenerateKeyWithPrefix(prefix, u string) string {
-	key := url.QueryEscape(u)
+// GenerateKeyWithPrefix generate key with GenerateKeyWithPrefix and u,
+// if key is larger than 200,it will use sha1.Sum
+// key like: prefix:u or prefix:sha1(u)
+func GenerateKeyWithPrefix(prefix, key string) string {
 	if len(key) > 200 {
-		d := sha1.Sum([]byte(u))
+		d := sha1.Sum([]byte(key))
 		return prefix + ":" + string(d[:])
 	}
 	return prefix + ":" + key
 }
 
+// GenerateRequestURIKey generate key with PageCachePrefix and request uri
 func GenerateRequestURIKey(c *gin.Context) (string, bool) {
-	return GenerateKeyWithPrefix(PageCachePrefix, c.Request.RequestURI), true
+	return GenerateKeyWithPrefix(PageCachePrefix, url.QueryEscape(c.Request.RequestURI)), true
 }
 
+// GenerateRequestPathKey generate key with PageCachePrefix and request Path
 func GenerateRequestPathKey(c *gin.Context) (string, bool) {
-	return GenerateKeyWithPrefix(PageCachePrefix, c.Request.URL.Path), true
+	return GenerateKeyWithPrefix(PageCachePrefix, url.QueryEscape(c.Request.URL.Path)), true
 }
 
 // BodyWriter dup response writer body
@@ -184,12 +178,13 @@ func (w *BodyWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-// Writes the string into the response body.
+// WriteString the string into the response body.
 func (w *BodyWriter) WriteString(s string) (int, error) {
 	w.dupBody.WriteString(s)
 	return w.ResponseWriter.WriteString(s)
 }
 
+// BodyCache body cache store
 type BodyCache struct {
 	Status int
 	Header http.Header
@@ -218,6 +213,7 @@ type cachePool struct {
 	pool *sync.Pool
 }
 
+// NewPool new pool for BodyCache
 func NewPool() Pool {
 	return &cachePool{
 		&sync.Pool{
@@ -226,10 +222,12 @@ func NewPool() Pool {
 	}
 }
 
+// Get implement Pool interface
 func (sf *cachePool) Get() *BodyCache {
 	return sf.pool.Get().(*BodyCache)
 }
 
+// Put implement Pool interface
 func (sf *cachePool) Put(c *BodyCache) {
 	c.Data = c.Data[:0]
 	c.Header = make(http.Header)

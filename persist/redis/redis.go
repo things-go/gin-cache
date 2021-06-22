@@ -10,15 +10,18 @@ import (
 	"github.com/things-go/gin-cache/persist"
 )
 
-type RedisStore struct {
+// Store redis store
+type Store struct {
 	Redisc *redis.Client
 }
 
-func NewRedisStore(client *redis.Client) *RedisStore {
-	return &RedisStore{client}
+// NewRedisStore new redis store
+func NewRedisStore(client *redis.Client) *Store {
+	return &Store{client}
 }
 
-func (store *RedisStore) Set(key string, value interface{}, expire time.Duration) error {
+// Set implement persist.Store interface
+func (store *Store) Set(key string, value interface{}, expire time.Duration) error {
 	payload, err := json.Marshal(value)
 	if err != nil {
 		return err
@@ -26,7 +29,8 @@ func (store *RedisStore) Set(key string, value interface{}, expire time.Duration
 	return store.Redisc.Set(context.Background(), key, string(payload), expire).Err()
 }
 
-func (store *RedisStore) Get(key string, value interface{}) error {
+// Get implement persist.Store interface
+func (store *Store) Get(key string, value interface{}) error {
 	data, err := store.Redisc.Get(context.Background(), key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
@@ -37,6 +41,7 @@ func (store *RedisStore) Get(key string, value interface{}) error {
 	return json.Unmarshal(data, &value)
 }
 
-func (store *RedisStore) Delete(key string) error {
+// Delete implement persist.Store interface
+func (store *Store) Delete(key string) error {
 	return store.Redisc.Del(context.Background(), key).Err()
 }

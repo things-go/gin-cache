@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// ErrCacheMiss cache miss error
 var ErrCacheMiss = errors.New("persist: cache miss")
 
 // Store is the interface of a Cache backend
