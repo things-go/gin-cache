@@ -16,7 +16,9 @@ func main() {
 		cache.CacheWithRequestURI(
 			memory.NewMemoryStore(1*time.Minute),
 			5*time.Second,
-			func(c *gin.Context) { c.String(200, "hello world") },
+			func(c *gin.Context) {
+				c.String(200, "hello world")
+			},
 		),
 	)
 	if err := app.Run(":8080"); err != nil {
