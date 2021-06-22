@@ -34,6 +34,8 @@ type Config struct {
 	store persist.Store
 	// expire the cache expiration time
 	expire time.Duration
+	// rand rand duration for expire
+	rand func() time.Duration
 	// generate key for store, bool means need cache or not
 	generateKey func(c *gin.Context) (string, bool)
 	// group single flight group
@@ -74,6 +76,16 @@ func WithBodyCachePool(p Pool) Option {
 	}
 }
 
+// WithRandDuration custom rand duration for expire, default return zero
+// expiration time always expire + rand()
+func WithRandDuration(rand func() time.Duration) Option {
+	return func(c *Config) {
+		if rand != nil {
+			c.rand = rand
+		}
+	}
+}
+
 // WithLogger custom logger, default is Discard.
 func WithLogger(l Logger) Option {
 	return func(c *Config) {
@@ -89,6 +101,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 	cfg := Config{
 		store:       store,
 		expire:      expire,
+		rand:        func() time.Duration { return 0 },
 		generateKey: GenerateRequestURIKey,
 		group:       new(singleflight.Group),
 		pool:        NewPool(),
@@ -120,7 +133,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 
 				bc := getBodyCacheFromBodyWriter(bodyWriter)
 				if !c.IsAborted() {
-					if err = cfg.store.Set(key, bc, cfg.expire); err != nil {
+					if err = cfg.store.Set(key, bc, cfg.expire+cfg.rand()); err != nil {
 						cfg.logger.Errorf("set cache key error: %s, cache key: %s", err, key)
 					}
 				}
