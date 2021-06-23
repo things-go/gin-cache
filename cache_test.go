@@ -305,3 +305,19 @@ func TestDiscard(_ *testing.T) {
 	l.DPanicf("")
 	l.Fatalf("")
 }
+
+// func TestRegisterResponseCacheGob(t *testing.T) {
+// 	RegisterResponseCacheGob()
+// 	r := responseCache{Status: 200, Data: []byte("test")}
+// 	mCache := new(bytes.Buffer)
+// 	encCache := gob.NewEncoder(mCache)
+// 	err := encCache.Encode(r)
+// 	assert.Nil(t, err)
+//
+// 	var decodedResp responseCache
+// 	pCache := bytes.NewBuffer(mCache.Bytes())
+// 	decCache := gob.NewDecoder(pCache)
+// 	err = decCache.Decode(&decodedResp)
+// 	assert.Nil(t, err)
+//
+// }
