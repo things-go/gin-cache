@@ -1,8 +1,6 @@
 language: go
 
 os:
-  - osx
-  - windows
   - linux
 
 services:
