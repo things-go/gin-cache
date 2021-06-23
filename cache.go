@@ -114,7 +114,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 	return func(c *gin.Context) {
 		key, needCache := cfg.generateKey(c)
 		if !needCache {
-			c.Next()
+			handle(c)
 			return
 		}
 
@@ -123,23 +123,24 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 		defer cfg.pool.Put(bodyCache)
 
 		if err := cfg.store.Get(key, &bodyCache); err != nil {
-			// set context writer to bodyWriter in order to record the response
+			// BodyWriter in order to dup the response
 			bodyWriter := &BodyWriter{ResponseWriter: c.Writer}
 			c.Writer = bodyWriter
 
+			inFlight := false
 			// use single flight to avoid Hotspot Invalid
 			bc, _, shared := cfg.group.Do(key, func() (interface{}, error) {
 				handle(c)
-
+				inFlight = true
 				bc := getBodyCacheFromBodyWriter(bodyWriter)
-				if !c.IsAborted() {
+				if !c.IsAborted() && bodyWriter.Status() < 300 {
 					if err = cfg.store.Set(key, bc, cfg.expire+cfg.rand()); err != nil {
 						cfg.logger.Errorf("set cache key error: %s, cache key: %s", err, key)
 					}
 				}
 				return bc, nil
 			})
-			if shared {
+			if !inFlight && shared {
 				responseWithBodyCache(c, bc.(*BodyCache))
 			}
 		} else {
