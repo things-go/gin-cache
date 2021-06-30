@@ -133,7 +133,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 				handle(c)
 				inFlight = true
 				bc := getBodyCacheFromBodyWriter(bodyWriter)
-				if !c.IsAborted() && bodyWriter.Status() < 300 {
+				if !c.IsAborted() && bodyWriter.Status() < 300 && bodyWriter.Status() >= 200 {
 					if err = cfg.store.Set(key, bc, cfg.expire+cfg.rand()); err != nil {
 						cfg.logger.Errorf("set cache key error: %s, cache key: %s", err, key)
 					}
