@@ -15,7 +15,7 @@ import (
 )
 
 // PageCachePrefix default page cache key prefix
-var PageCachePrefix = "gincache.page.cache"
+var PageCachePrefix = "gincache.page.cache:"
 
 // Logger logger interface
 type Logger interface {
@@ -161,13 +161,13 @@ func CacheWithRequestPath(store persist.Store, expire time.Duration, handle gin.
 
 // GenerateKeyWithPrefix generate key with GenerateKeyWithPrefix and u,
 // if key is larger than 200,it will use sha1.Sum
-// key like: prefix:u or prefix:sha1(u)
+// key like: prefix+u or prefix+sha1(u)
 func GenerateKeyWithPrefix(prefix, key string) string {
 	if len(key) > 200 {
 		d := sha1.Sum([]byte(key))
-		return prefix + ":" + string(d[:])
+		return prefix + string(d[:])
 	}
-	return prefix + ":" + key
+	return prefix + key
 }
 
 // GenerateRequestURIKey generate key with PageCachePrefix and request uri
