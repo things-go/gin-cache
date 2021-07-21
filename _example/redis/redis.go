@@ -15,7 +15,7 @@ func main() {
 
 	store := redisStore.NewStore(redis.NewClient(&redis.Options{
 		Network: "tcp",
-		Addr:    "127.0.0.1:6379",
+		Addr:    "localhost:6379",
 	}))
 
 	app.GET("/hello",

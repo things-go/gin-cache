@@ -2,7 +2,6 @@
 
 [![GoDoc](https://godoc.org/github.com/things-go/gin-cache?status.svg)](https://godoc.org/github.com/things-go/gin-cache)
 [![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go&logoColor=white)](https://pkg.go.dev/github.com/things-go/gin-cache?tab=doc)
-[![Build Status](https://www.travis-ci.com/things-go/gin-cache.svg?branch=main)](https://www.travis-ci.com/things-go/gin-cache)
 [![codecov](https://codecov.io/gh/things-go/gin-cache/branch/main/graph/badge.svg)](https://codecov.io/gh/things-go/gin-cache)
 [![Go Report Card](https://goreportcard.com/badge/github.com/things-go/gin-cache)](https://goreportcard.com/report/github.com/things-go/gin-cache)
 [![Licence](https://img.shields.io/github/license/things-go/gin-cache)](https://raw.githubusercontent.com/things-go/gin-cache/master/LICENSE)
@@ -88,7 +87,7 @@ func main() {
 
 	store := redisStore.NewStore(redis.NewClient(&redis.Options{
 		Network: "tcp",
-		Addr:    "127.0.0.1:6379",
+		Addr:    "localhost:6379",
 	}))
 
 	app.GET("/hello",

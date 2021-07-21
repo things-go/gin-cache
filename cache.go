@@ -150,12 +150,14 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 }
 
 // CacheWithRequestURI a shortcut function for caching response with uri
-func CacheWithRequestURI(store persist.Store, expire time.Duration, handle gin.HandlerFunc, opts ...Option) gin.HandlerFunc {
+func CacheWithRequestURI(store persist.Store, expire time.Duration, handle gin.HandlerFunc, // nolint: golint,revive
+	opts ...Option) gin.HandlerFunc {
 	return Cache(store, expire, handle, opts...)
 }
 
 // CacheWithRequestPath a shortcut function for caching response with url path, which discard the query params
-func CacheWithRequestPath(store persist.Store, expire time.Duration, handle gin.HandlerFunc, opts ...Option) gin.HandlerFunc {
+func CacheWithRequestPath(store persist.Store, expire time.Duration, handle gin.HandlerFunc, // nolint: golint,revive
+	opts ...Option) gin.HandlerFunc {
 	return Cache(store, expire, handle, append(opts, WithGenerateKey(GenerateRequestPathKey))...)
 }
 

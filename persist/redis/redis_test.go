@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -69,8 +70,16 @@ func emptyCache(t *testing.T, newCache cacheFactory) {
 }
 
 var newInMemoryStore = func(_ *testing.T, defaultExpiration time.Duration) persist.Store {
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+	port := os.Getenv("REDIS_PORT")
+	if port == "" {
+		port = "6379"
+	}
 	return NewStore(redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: redisHost + ":" + port,
 	}))
 }
 
