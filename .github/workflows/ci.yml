@@ -65,11 +65,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.go-version }}-go-ci
 
-      - name: Start Redis
-        uses: supercharge/redis-github-action@1.1.0
-        with:
-          redis-version: 6
-
       - name: Go test osx linux
         if: runner.os == 'ubuntu-latest' || runner.os == 'macos-latest'
         run: |
