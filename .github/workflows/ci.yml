@@ -69,7 +69,7 @@ jobs:
         run: |
           go test -v -coverprofile=coverage -covermode=atomic ./...
         env:
-          REDIS_HOST: redis
+          REDIS_HOST: localhost
           REDIS_PORT: 6379
 
       - name: Upload coverage to Codecov
