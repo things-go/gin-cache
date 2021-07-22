@@ -65,9 +65,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.go-version }}-go-ci
 
-      - name: Go test windows
+      - name: Unit test
         run: |
-          go test -v -race -coverprofile=coverage -covermode=atomic ./...
+          go test -v -coverprofile=coverage -covermode=atomic ./...
         env:
           REDIS_HOST: redis
           REDIS_PORT: 6379
