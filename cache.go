@@ -3,6 +3,8 @@ package cache
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"sync"
@@ -122,7 +124,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 		bodyCache := cfg.pool.Get()
 		defer cfg.pool.Put(bodyCache)
 
-		if err := cfg.store.Get(key, &bodyCache); err != nil {
+		if err := cfg.store.Get(key, bodyCache); err != nil {
 			// BodyWriter in order to dup the response
 			bodyWriter := &BodyWriter{ResponseWriter: c.Writer}
 			c.Writer = bodyWriter
@@ -205,6 +207,17 @@ type BodyCache struct {
 	Status int
 	Header http.Header
 	Data   []byte
+}
+
+var _ encoding.BinaryMarshaler = (*BodyCache)(nil)
+var _ encoding.BinaryUnmarshaler = (*BodyCache)(nil)
+
+func (b *BodyCache) MarshalBinary() ([]byte, error) {
+	return json.Marshal(b)
+}
+
+func (b *BodyCache) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, b)
 }
 
 func getBodyCacheFromBodyWriter(writer *BodyWriter) *BodyCache {

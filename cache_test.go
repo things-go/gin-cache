@@ -23,7 +23,7 @@ import (
 )
 
 var longLengthThan200Key = "/" + strings.Repeat("qwertyuiopasdfghjklzxcvbnm", 8)
-var enableRedis bool = false
+var enableRedis bool = true
 
 var newStore = func(defaultExpiration time.Duration) persist.Store {
 	if enableRedis {

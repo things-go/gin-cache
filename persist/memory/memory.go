@@ -21,7 +21,7 @@ func NewStore(c *cache.Cache) *Store {
 
 // Set implement persist.Store interface
 func (c *Store) Set(key string, value interface{}, expire time.Duration) error {
-	c.Cache.Set(key, value, expire)
+	c.Cache.Set(key, reflect.Indirect(reflect.ValueOf(value)).Interface(), expire)
 	return nil
 }
 

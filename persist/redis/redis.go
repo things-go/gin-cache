@@ -2,7 +2,6 @@ package redis
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -22,23 +21,19 @@ func NewStore(client *redis.Client) *Store {
 
 // Set implement persist.Store interface
 func (store *Store) Set(key string, value interface{}, expire time.Duration) error {
-	payload, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-	return store.Redisc.Set(context.Background(), key, string(payload), expire).Err()
+	return store.Redisc.Set(context.Background(), key, value, expire).Err()
 }
 
 // Get implement persist.Store interface
 func (store *Store) Get(key string, value interface{}) error {
-	data, err := store.Redisc.Get(context.Background(), key).Bytes()
+	err := store.Redisc.Get(context.Background(), key).Scan(value)
 	if err != nil {
 		if err == redis.Nil {
 			return persist.ErrCacheMiss
 		}
 		return err
 	}
-	return json.Unmarshal(data, &value)
+	return nil
 }
 
 // Delete implement persist.Store interface
