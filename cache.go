@@ -333,10 +333,10 @@ func (JSONGzipEncoding) Marshal(v interface{}) ([]byte, error) {
 	}
 	err = json.NewEncoder(writer).Encode(v)
 	if err != nil {
-		writer.Close() // nolint: errcheck
+		writer.Close() // nolint: errcheck // ignore error
 		return nil, err
 	}
-	writer.Close() // nolint: errcheck
+	writer.Close() // nolint: errcheck // ignore error
 	return buf.Bytes(), nil
 }
 
@@ -345,6 +345,6 @@ func (JSONGzipEncoding) Unmarshal(data []byte, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer reader.Close() // nolint: errcheck
+	defer reader.Close() // nolint: errcheck // ignore error
 	return json.NewDecoder(reader).Decode(v)
 }
