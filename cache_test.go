@@ -6,19 +6,41 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/singleflight"
 
+	"github.com/things-go/gin-cache/persist"
 	"github.com/things-go/gin-cache/persist/memory"
+	redisStore "github.com/things-go/gin-cache/persist/redis"
 )
 
 var longLengthThan200Key = "/" + strings.Repeat("qwertyuiopasdfghjklzxcvbnm", 8)
+var enableRedis bool = false
+
+var newStore = func(defaultExpiration time.Duration) persist.Store {
+	if enableRedis {
+		redisHost := os.Getenv("REDIS_HOST")
+		if redisHost == "" {
+			redisHost = "localhost"
+		}
+		port := os.Getenv("REDIS_PORT")
+		if port == "" {
+			port = "6379"
+		}
+		return redisStore.NewStore(redis.NewClient(&redis.Options{
+			Addr: redisHost + ":" + port,
+		}))
+	}
+	return memory.NewStore(cache.New(defaultExpiration, time.Minute*10))
+}
 
 func init() {
 	gin.SetMode(gin.TestMode)
@@ -32,7 +54,7 @@ func performRequest(target string, router *gin.Engine) *httptest.ResponseRecorde
 }
 
 func TestCache(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache/ping", Cache(store, time.Second*3, func(c *gin.Context) {
@@ -48,7 +70,7 @@ func TestCache(t *testing.T) {
 }
 
 func TestCacheNoNeedCache(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache/ping",
@@ -78,7 +100,7 @@ func TestCacheNoNeedCache(t *testing.T) {
 }
 
 func TestCacheExpire(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache/ping", Cache(store, time.Second, func(c *gin.Context) {
@@ -86,7 +108,7 @@ func TestCacheExpire(t *testing.T) {
 	}))
 
 	w1 := performRequest("/cache/ping", r)
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 3)
 	w2 := performRequest("/cache/ping", r)
 
 	assert.Equal(t, http.StatusOK, w1.Code)
@@ -95,7 +117,7 @@ func TestCacheExpire(t *testing.T) {
 }
 
 func TestCacheHtmlFile(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.LoadHTMLFiles("testdata/template.html")
@@ -112,7 +134,7 @@ func TestCacheHtmlFile(t *testing.T) {
 }
 
 func TestCacheHtmlFileExpire(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.LoadHTMLFiles("testdata/template.html")
@@ -121,7 +143,7 @@ func TestCacheHtmlFileExpire(t *testing.T) {
 	}))
 
 	w1 := performRequest("/cache/html", r)
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 3)
 	w2 := performRequest("/cache/html", r)
 
 	assert.Equal(t, http.StatusOK, w1.Code)
@@ -130,7 +152,7 @@ func TestCacheHtmlFileExpire(t *testing.T) {
 }
 
 func TestCacheAborted(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache/aborted", Cache(store, time.Second*3, func(c *gin.Context) {
@@ -147,7 +169,7 @@ func TestCacheAborted(t *testing.T) {
 }
 
 func TestCacheStatus400(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache/400", Cache(store, time.Second*3, func(c *gin.Context) {
@@ -164,7 +186,7 @@ func TestCacheStatus400(t *testing.T) {
 }
 
 func TestCacheStatus207(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache/207", Cache(store, time.Second*3, func(c *gin.Context) {
@@ -181,7 +203,7 @@ func TestCacheStatus207(t *testing.T) {
 }
 
 func TestCacheLongKey(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET(longLengthThan200Key, Cache(store, time.Second*3, func(c *gin.Context) {
@@ -197,7 +219,7 @@ func TestCacheLongKey(t *testing.T) {
 }
 
 func TestCacheWithRequestPath(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache_with_path", CacheWithRequestPath(store, time.Second*3, func(c *gin.Context) {
@@ -213,7 +235,7 @@ func TestCacheWithRequestPath(t *testing.T) {
 }
 
 func TestCacheWithRequestURI(t *testing.T) {
-	store := memory.NewStore(cache.New(60*time.Second, time.Minute*10))
+	store := newStore(time.Second * 60)
 
 	r := gin.New()
 	r.GET("/cache_with_uri", CacheWithRequestURI(store, time.Second*3, func(c *gin.Context) {

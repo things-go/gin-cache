@@ -69,7 +69,7 @@ func emptyCache(t *testing.T, newCache cacheFactory) {
 	require.NoError(t, err)
 }
 
-var newInMemoryStore = func(_ *testing.T, defaultExpiration time.Duration) persist.Store {
+var newInRedisStore = func(_ *testing.T, defaultExpiration time.Duration) persist.Store {
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		redisHost = "localhost"
@@ -85,13 +85,13 @@ var newInMemoryStore = func(_ *testing.T, defaultExpiration time.Duration) persi
 
 // Test typical cache interactions
 func Test_Memory_typicalGetSet(t *testing.T) {
-	typicalGetSet(t, newInMemoryStore)
+	typicalGetSet(t, newInRedisStore)
 }
 
 func Test_Memory_Expiration(t *testing.T) {
-	expiration(t, newInMemoryStore)
+	expiration(t, newInRedisStore)
 }
 
 func Test_Memory_Empty(t *testing.T) {
-	emptyCache(t, newInMemoryStore)
+	emptyCache(t, newInRedisStore)
 }
