@@ -2,6 +2,7 @@ package cache
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto/sha1"
 	"encoding"
 	"encoding/json"
@@ -22,6 +23,12 @@ var PageCachePrefix = "gincache.page.cache:"
 // Logger logger interface
 type Logger interface {
 	Errorf(format string, args ...interface{})
+}
+
+// Encoding interface
+type Encoding interface {
+	Marshal(v interface{}) ([]byte, error)
+	Unmarshal(data []byte, v interface{}) error
 }
 
 // Pool BodyCache pool
@@ -46,6 +53,8 @@ type Config struct {
 	pool Pool
 	// logger debug
 	logger Logger
+	// encoding default: JSONEncoding
+	encode Encoding
 }
 
 // Option custom option
@@ -97,6 +106,15 @@ func WithLogger(l Logger) Option {
 	}
 }
 
+// WithEncoding custom Encoding, default is JSONEncoding.
+func WithEncoding(encode Encoding) Option {
+	return func(c *Config) {
+		if encode != nil {
+			c.encode = encode
+		}
+	}
+}
+
 // Cache user must pass store and store expiration time to cache and with custom option.
 // default caching response with uri, which use PageCachePrefix
 func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, opts ...Option) gin.HandlerFunc {
@@ -108,6 +126,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 		group:       new(singleflight.Group),
 		pool:        NewPool(),
 		logger:      NewDiscard(),
+		encode:      JSONEncoding{},
 	}
 	for _, opt := range opts {
 		opt(&cfg)
@@ -123,6 +142,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 		// read cache first
 		bodyCache := cfg.pool.Get()
 		defer cfg.pool.Put(bodyCache)
+		bodyCache.encoding = cfg.encode
 
 		if err := cfg.store.Get(key, bodyCache); err != nil {
 			// BodyWriter in order to dup the response
@@ -134,7 +154,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 			bc, _, shared := cfg.group.Do(key, func() (interface{}, error) {
 				handle(c)
 				inFlight = true
-				bc := getBodyCacheFromBodyWriter(bodyWriter)
+				bc := getBodyCacheFromBodyWriter(bodyWriter, cfg.encode)
 				if !c.IsAborted() && bodyWriter.Status() < 300 && bodyWriter.Status() >= 200 {
 					if err = cfg.store.Set(key, bc, cfg.expire+cfg.rand()); err != nil {
 						cfg.logger.Errorf("set cache key error: %s, cache key: %s", err, key)
@@ -204,27 +224,29 @@ func (w *BodyWriter) WriteString(s string) (int, error) {
 
 // BodyCache body cache store
 type BodyCache struct {
-	Status int
-	Header http.Header
-	Data   []byte
+	Status   int
+	Header   http.Header
+	Data     []byte
+	encoding Encoding
 }
 
 var _ encoding.BinaryMarshaler = (*BodyCache)(nil)
 var _ encoding.BinaryUnmarshaler = (*BodyCache)(nil)
 
 func (b *BodyCache) MarshalBinary() ([]byte, error) {
-	return json.Marshal(b)
+	return b.encoding.Marshal(b)
 }
 
 func (b *BodyCache) UnmarshalBinary(data []byte) error {
-	return json.Unmarshal(data, b)
+	return b.encoding.Unmarshal(data, b)
 }
 
-func getBodyCacheFromBodyWriter(writer *BodyWriter) *BodyCache {
+func getBodyCacheFromBodyWriter(writer *BodyWriter, encode Encoding) *BodyCache {
 	return &BodyCache{
 		writer.Status(),
 		writer.Header().Clone(),
 		writer.dupBody.Bytes(),
+		encode,
 	}
 }
 
@@ -260,6 +282,7 @@ func (sf *cachePool) Get() *BodyCache {
 func (sf *cachePool) Put(c *BodyCache) {
 	c.Data = c.Data[:0]
 	c.Header = make(http.Header)
+	c.encoding = nil
 	sf.pool.Put(c)
 }
 
@@ -289,3 +312,39 @@ func (sf Discard) DPanicf(string, ...interface{}) {}
 
 // Fatalf implement Logger interface.
 func (sf Discard) Fatalf(string, ...interface{}) {}
+
+type JSONEncoding struct{}
+
+func (JSONEncoding) Marshal(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+func (JSONEncoding) Unmarshal(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
+}
+
+type JSONGzipEncoding struct{}
+
+func (JSONGzipEncoding) Marshal(v interface{}) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	writer, err := gzip.NewWriterLevel(buf, gzip.BestCompression)
+	if err != nil {
+		return nil, err
+	}
+	err = json.NewEncoder(writer).Encode(v)
+	if err != nil {
+		writer.Close() // nolint: errcheck
+		return nil, err
+	}
+	writer.Close() // nolint: errcheck
+	return buf.Bytes(), nil
+}
+
+func (JSONGzipEncoding) Unmarshal(data []byte, v interface{}) error {
+	reader, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	defer reader.Close() // nolint: errcheck
+	return json.NewDecoder(reader).Decode(v)
+}

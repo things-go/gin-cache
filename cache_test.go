@@ -15,6 +15,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/things-go/gin-cache/persist"
@@ -23,7 +24,7 @@ import (
 )
 
 var longLengthThan200Key = "/" + strings.Repeat("qwertyuiopasdfghjklzxcvbnm", 8)
-var enableRedis bool = true
+var enableRedis = false
 
 var newStore = func(defaultExpiration time.Duration) persist.Store {
 	if enableRedis {
@@ -88,6 +89,7 @@ func TestCacheNoNeedCache(t *testing.T) {
 			}),
 			WithSingleflight(&singleflight.Group{}),
 			WithLogger(NewDiscard()),
+			WithEncoding(JSONEncoding{}),
 		),
 	)
 
@@ -328,18 +330,40 @@ func TestDiscard(_ *testing.T) {
 	l.Fatalf("")
 }
 
-// func TestRegisterResponseCacheGob(t *testing.T) {
-// 	RegisterResponseCacheGob()
-// 	r := responseCache{Status: 200, Data: []byte("test")}
-// 	mCache := new(bytes.Buffer)
-// 	encCache := gob.NewEncoder(mCache)
-// 	err := encCache.Encode(r)
-// 	assert.Nil(t, err)
-//
-// 	var decodedResp responseCache
-// 	pCache := bytes.NewBuffer(mCache.Bytes())
-// 	decCache := gob.NewDecoder(pCache)
-// 	err = decCache.Decode(&decodedResp)
-// 	assert.Nil(t, err)
-//
-// }
+func TestJSONEncoding(t *testing.T) {
+	want := BodyCache{
+		Status:   2,
+		Header:   nil,
+		Data:     []byte{1, 20, 3, 90},
+		encoding: nil,
+	}
+
+	encode := JSONEncoding{}
+
+	data, err := encode.Marshal(want)
+	require.NoError(t, err)
+
+	got := BodyCache{}
+	err = encode.Unmarshal(data, &got)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestJSONGzipEncoding(t *testing.T) {
+	want := BodyCache{
+		Status:   2,
+		Header:   nil,
+		Data:     []byte{1, 20, 3, 90},
+		encoding: nil,
+	}
+
+	encode := JSONGzipEncoding{}
+
+	data, err := encode.Marshal(want)
+	require.NoError(t, err)
+
+	got := BodyCache{}
+	err = encode.Unmarshal(data, &got)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
