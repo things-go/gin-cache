@@ -21,7 +21,7 @@ func NewStore(c *cache.Cache) *Store {
 
 // Set implement persist.Store interface
 func (c *Store) Set(key string, value interface{}, expire time.Duration) error {
-	c.Cache.Set(key, reflect.Indirect(reflect.ValueOf(value)).Interface(), expire)
+	c.Cache.Set(key, value, expire)
 	return nil
 }
 
@@ -34,7 +34,7 @@ func (c *Store) Get(key string, value interface{}) error {
 
 	v := reflect.ValueOf(value)
 	if v.Type().Kind() == reflect.Ptr && v.Elem().CanSet() {
-		v.Elem().Set(reflect.ValueOf(val))
+		v.Elem().Set(reflect.Indirect(reflect.ValueOf(val)))
 	}
 	return nil
 }
