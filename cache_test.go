@@ -313,7 +313,7 @@ func TestBodyWrite(t *testing.T) {
 	assert.Equal(t, "foo", w.Body.String())
 	assert.Equal(t, "foo", writer.dupBody.String())
 	assert.True(t, c.Writer.Written())
-	c.Writer.Write([]byte("bar")) // nolint: errcheck
+	c.Writer.WriteString("bar") // nolint: errcheck
 	assert.Equal(t, http.StatusNoContent, c.Writer.Status())
 	assert.Equal(t, "foobar", w.Body.String())
 	assert.Equal(t, "foobar", writer.dupBody.String())
