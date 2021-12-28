@@ -37,13 +37,13 @@ type Pool interface {
 	Put(*BodyCache)
 }
 
-// Config config for cache
+// Config for cache
 type Config struct {
 	// store the cache backend to store response
 	store persist.Store
 	// expire the cache expiration time
 	expire time.Duration
-	// rand rand duration for expire
+	// rand duration for expire
 	rand func() time.Duration
 	// generate key for store, bool means need cache or not
 	generateKey func(c *gin.Context) (string, bool)
