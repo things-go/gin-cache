@@ -20,13 +20,13 @@ func NewStore(c *cache.Cache) *Store {
 }
 
 // Set implement persist.Store interface
-func (c *Store) Set(key string, value interface{}, expire time.Duration) error {
+func (c *Store) Set(key string, value any, expire time.Duration) error {
 	c.Cache.Set(key, value, expire)
 	return nil
 }
 
 // Get implement persist.Store interface
-func (c *Store) Get(key string, value interface{}) error {
+func (c *Store) Get(key string, value any) error {
 	val, found := c.Cache.Get(key)
 	if !found {
 		return persist.ErrCacheMiss

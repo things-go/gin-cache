@@ -20,12 +20,12 @@ func NewStore(client *redis.Client) *Store {
 }
 
 // Set implement persist.Store interface
-func (store *Store) Set(key string, value interface{}, expire time.Duration) error {
+func (store *Store) Set(key string, value any, expire time.Duration) error {
 	return store.Redisc.Set(context.Background(), key, value, expire).Err()
 }
 
 // Get implement persist.Store interface
-func (store *Store) Get(key string, value interface{}) error {
+func (store *Store) Get(key string, value any) error {
 	err := store.Redisc.Get(context.Background(), key).Scan(value)
 	if err != nil {
 		if err == redis.Nil {

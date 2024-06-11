@@ -1,6 +1,5 @@
 # gin-cache gin's middleware
 
-[![GoDoc](https://godoc.org/github.com/things-go/gin-cache?status.svg)](https://godoc.org/github.com/things-go/gin-cache)
 [![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go&logoColor=white)](https://pkg.go.dev/github.com/things-go/gin-cache?tab=doc)
 [![codecov](https://codecov.io/gh/things-go/gin-cache/branch/main/graph/badge.svg)](https://codecov.io/gh/things-go/gin-cache)
 [![Go Report Card](https://goreportcard.com/badge/github.com/things-go/gin-cache)](https://goreportcard.com/report/github.com/things-go/gin-cache)
@@ -17,7 +16,7 @@ Gin middleware/handler to enable Cache.
 Download and install it:
 
 ```sh
-$ go get github.com/things-go/gin-cache
+go get github.com/things-go/gin-cache
 ```
 
 Import it in your code:
@@ -26,7 +25,7 @@ Import it in your code:
 import cache "github.com/things-go/gin-cache"
 ```
 
-### Example:
+### Example
 
 #### 1. memory store
 
@@ -151,15 +150,3 @@ func custom() gin.HandlerFunc {
 	}
 }
 ```
-
-### Donation
-
-if package help you a lot,you can support us by:
-
-**Alipay**
-
-![alipay](https://github.com/thinkgos/thinkgos/blob/master/asserts/alipay.jpg)
-
-**WeChat Pay**
-
-![wxpay](https://github.com/thinkgos/thinkgos/blob/master/asserts/wxpay.jpg)

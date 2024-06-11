@@ -263,7 +263,7 @@ func newDelayStore(c *cache.Cache) *memoryDelayStore {
 	return &memoryDelayStore{memory.NewStore(c)}
 }
 
-func (c *memoryDelayStore) Set(key string, value interface{}, expires time.Duration) error {
+func (c *memoryDelayStore) Set(key string, value any, expires time.Duration) error {
 	time.Sleep(time.Millisecond * 3)
 	return c.Store.Set(key, value, expires)
 }

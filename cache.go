@@ -22,13 +22,13 @@ var PageCachePrefix = "gincache.page.cache:"
 
 // Logger logger interface
 type Logger interface {
-	Errorf(format string, args ...interface{})
+	Errorf(format string, args ...any)
 }
 
 // Encoding interface
 type Encoding interface {
-	Marshal(v interface{}) ([]byte, error)
-	Unmarshal(data []byte, v interface{}) error
+	Marshal(v any) ([]byte, error)
+	Unmarshal(data []byte, v any) error
 }
 
 // Pool BodyCache pool
@@ -151,7 +151,7 @@ func Cache(store persist.Store, expire time.Duration, handle gin.HandlerFunc, op
 
 			inFlight := false
 			// use single flight to avoid Hotspot Invalid
-			bc, _, shared := cfg.group.Do(key, func() (interface{}, error) {
+			bc, _, shared := cfg.group.Do(key, func() (any, error) {
 				handle(c)
 				inFlight = true
 				bc := getBodyCacheFromBodyWriter(bodyWriter, cfg.encode)
@@ -268,7 +268,7 @@ type cachePool struct {
 func NewPool() Pool {
 	return &cachePool{
 		&sync.Pool{
-			New: func() interface{} { return &BodyCache{Header: make(http.Header)} },
+			New: func() any { return &BodyCache{Header: make(http.Header)} },
 		},
 	}
 }
@@ -296,36 +296,36 @@ var _ Logger = (*Discard)(nil)
 func NewDiscard() Discard { return Discard{} }
 
 // Debugf implement Logger interface.
-func (sf Discard) Debugf(string, ...interface{}) {}
+func (sf Discard) Debugf(string, ...any) {}
 
 // Infof implement Logger interface.
-func (sf Discard) Infof(string, ...interface{}) {}
+func (sf Discard) Infof(string, ...any) {}
 
 // Errorf implement Logger interface.
-func (sf Discard) Errorf(string, ...interface{}) {}
+func (sf Discard) Errorf(string, ...any) {}
 
 // Warnf implement Logger interface.
-func (sf Discard) Warnf(string, ...interface{}) {}
+func (sf Discard) Warnf(string, ...any) {}
 
 // DPanicf implement Logger interface.
-func (sf Discard) DPanicf(string, ...interface{}) {}
+func (sf Discard) DPanicf(string, ...any) {}
 
 // Fatalf implement Logger interface.
-func (sf Discard) Fatalf(string, ...interface{}) {}
+func (sf Discard) Fatalf(string, ...any) {}
 
 type JSONEncoding struct{}
 
-func (JSONEncoding) Marshal(v interface{}) ([]byte, error) {
+func (JSONEncoding) Marshal(v any) ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func (JSONEncoding) Unmarshal(data []byte, v interface{}) error {
+func (JSONEncoding) Unmarshal(data []byte, v any) error {
 	return json.Unmarshal(data, v)
 }
 
 type JSONGzipEncoding struct{}
 
-func (JSONGzipEncoding) Marshal(v interface{}) ([]byte, error) {
+func (JSONGzipEncoding) Marshal(v any) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	writer, err := gzip.NewWriterLevel(buf, gzip.BestCompression)
 	if err != nil {
@@ -340,7 +340,7 @@ func (JSONGzipEncoding) Marshal(v interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (JSONGzipEncoding) Unmarshal(data []byte, v interface{}) error {
+func (JSONGzipEncoding) Unmarshal(data []byte, v any) error {
 	reader, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return err

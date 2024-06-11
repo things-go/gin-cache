@@ -3,7 +3,7 @@ name: Reviewdog
 on:
   pull_request:
     paths-ignore:
-      - '**.md'
+      - "**.md"
 
 jobs:
   golangci-lint:
@@ -12,14 +12,15 @@ jobs:
     steps:
       # optionally use a specific version of Go rather than the default one
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.17.x'
+          go-version: "1.22.x"
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v1
-        with:
-          golangci_lint_flags: "-E goimports -E gocritic -E misspell -E revive"
+        uses: reviewdog/action-golangci-lint@v2
+        with: # BUG: typecheck error when enable all
+          args: --disable-all -E goimports,misspell,whitespace
+          version: latest
